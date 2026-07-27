@@ -9,14 +9,16 @@ export default function InteractiveBackground() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     let animationFrameId;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    let width = (canvas.width = window.innerWidth || 1200);
+    let height = (canvas.height = window.innerHeight || 800);
 
     const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth || 1200;
+      height = canvas.height = window.innerHeight || 800;
     };
     window.addEventListener('resize', handleResize);
 
@@ -36,7 +38,7 @@ export default function InteractiveBackground() {
     window.addEventListener('mousemove', handleMouseMove);
 
     // Particle class
-    const particleCount = Math.min(Math.floor((width * height) / 18000), 65);
+    const particleCount = Math.max(15, Math.min(Math.floor((width * height) / 18000), 65));
     const particles = [];
 
     class Particle {
@@ -65,7 +67,7 @@ export default function InteractiveBackground() {
         const dy = mouse.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < mouse.radius) {
+        if (dist < mouse.radius && dist > 0) {
           const force = (mouse.radius - dist) / mouse.radius;
           this.x -= (dx / dist) * force * 1.5;
           this.y -= (dy / dist) * force * 1.5;
@@ -76,6 +78,7 @@ export default function InteractiveBackground() {
       }
 
       draw() {
+        if (!ctx) return;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
@@ -92,6 +95,7 @@ export default function InteractiveBackground() {
 
     // Render loop
     const render = () => {
+      if (!ctx) return;
       // Smooth mouse lerp
       mouse.x += (mouse.targetX - mouse.x) * 0.08;
       mouse.y += (mouse.targetY - mouse.y) * 0.08;
@@ -100,11 +104,11 @@ export default function InteractiveBackground() {
 
       // Mouse Spotlight Radial Gradient
       const gradient = ctx.createRadialGradient(
-        mouse.x,
-        mouse.y,
+        mouse.x || width / 2,
+        mouse.y || height / 2,
         0,
-        mouse.x,
-        mouse.y,
+        mouse.x || width / 2,
+        mouse.y || height / 2,
         350
       );
       gradient.addColorStop(0, 'rgba(99, 102, 241, 0.12)');
@@ -146,7 +150,7 @@ export default function InteractiveBackground() {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
   }, [theme]);
 
